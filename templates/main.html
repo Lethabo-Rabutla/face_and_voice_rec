@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Visage Voice Sentinel ATM</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+            }
+            h1 {
+                text-align: center;
+            }
+            #container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+            }
+            #recordButton {
+                padding: 20px 45px; /* Adjusted padding */
+                font-size: 28px; /* Adjusted font size */
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                cursor: pointer;
+                border-radius: 5px;
+            }
+            #recordButton:hover {
+                background-color: #45a049;
+            }
+            #output {
+                margin-top: 20px;
+                font-size: 18px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="container">
+            <h1>VVS(Visage Voice Sentinel)</h1>
+            
+            <button id="recordButton">TALK TO ME</button>
+
+            <div id="output">Choose what you want to do and say to the mic (DEPOSIT, WITHDRAW, SEND CASH, CHECK BALANCE)</div>
+        </div>
+
+        <script>
+            // Function to handle voice recognition
+            function startRecognition() {
+                var recognition = new webkitSpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.start();
+
+                recognition.onresult = function(event) {
+                    var result = event.results[0][0].transcript;
+
+                    // Send the recognized text to the server
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/recognize', true);
+                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            console.log('Text sent to server:', result);
+                           // Handle response
+                            var responseText = xhr.responseText.trim();  // Remove leading and trailing spaces
+
+                            if (responseText.includes("deposit")) {
+                                window.location.href = "/deposit";
+                            } else if (responseText.includes("withdraw")) {
+                                window.location.href = "/withdraw";
+                            } else if (responseText.includes("send cash")) {
+                                window.location.href = "/sendcash";  // Match the route name in Flask
+                            } else if (responseText.includes("check balance")) {
+                                window.location.href = "/checkbalance";  // Match the route name in Flask
+                            } else {
+                                console.error('Unknown command:', responseText);
+                            }
+
+                        } else {
+                            console.error('Voice recognition request failed');
+                        }
+                    };
+                    xhr.send('text=' + encodeURIComponent(result)); // Ensure text is properly encoded
+                };
+            }
+
+            // Event listener for the record button
+            document.getElementById('recordButton').addEventListener('click', function() {
+                startRecognition();
+            });
+        </script>
+    </body>
+    </html>

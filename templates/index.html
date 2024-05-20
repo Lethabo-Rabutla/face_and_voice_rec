@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Web Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        video, canvas {
+            border: 2px solid #fff;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background: #4CAF50;
+            border: none;
+            padding: 10px 20px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        table {
+            margin: 0 auto;
+            color: #fff;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border-radius: 5px;
+            width: calc(100% - 22px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <video id="video" width="440" height="280" autoplay></video>
+        <br>
+        <button id="capture-btn">Capture Face</button>
+        <br>
+        <canvas id="canvas" width="440" height="280" style="display: none;"></canvas>
+        <h2>Welcome, Face the Camera and press the button to unlock your account</h2>
+        <table>
+            <tr>
+                <td>Your Name</td>
+                <td><input type="text" id="name" name="name" required></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button id="register-btn">Register</button>
+                    <button id="login-btn">Log In</button>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <script>
+        let video;
+        let canvas;
+        let nameInput;
+
+        function init() {
+            video = document.getElementById("video");
+            canvas = document.getElementById("canvas");
+            nameInput = document.getElementById("name");
+
+            // Open webcam
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(error => {
+                    console.log("Error accessing webcam", error);
+                    alert("Cannot access webcam");
+                });
+        }
+
+        // Capture image from video
+        function capture() {
+            const context = canvas.getContext("2d");
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.style.display = "block";
+            video.style.display = "none";
+        }
+
+        // Convert data URI to Blob
+        function dataURItoBlob(dataURI) {
+            const byteString = atob(dataURI.split(",")[1]);
+            const mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
+
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], { type: mimeString });
+        }
+
+        // Register function
+        function register() {
+            const name = nameInput.value;
+            const photo = dataURItoBlob(canvas.toDataURL("image/jpeg"));
+
+            if (!name || !photo) {
+                alert("Name and photo required, please");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("photo", photo, `${name}.jpg`);
+
+            fetch("/register", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Registration successful");
+                    window.location.href = "/";
+                } else {
+                    alert("Registration failed");
+                }
+            })
+            .catch(error => {
+                console.log("Error", error);
+            });
+        }
+
+        // Login function
+        function login() {
+            const context = canvas.getContext("2d");
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const photo = dataURItoBlob(canvas.toDataURL("image/jpeg"));
+
+            if (!photo) {
+                alert("Photo required, please");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("photo", photo, "login.jpg");
+
+            fetch("/login", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Login successful!");
+                    window.location.href = "/success?user_name=" + nameInput.value;
+                } else {
+                    alert("Login failed, please try again");
+                }
+            })
+            .catch(error => {
+                console.log("Error", error);
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('capture-btn').addEventListener('click', capture);
+        document.getElementById('register-btn').addEventListener('click', register);
+        document.getElementById('login-btn').addEventListener('click', login);
+
+        init();
+    </script>
+</body>
+</html>
