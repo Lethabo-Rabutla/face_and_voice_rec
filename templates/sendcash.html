@@ -55,24 +55,23 @@
 </head>
 <body>
     <h1>SEND CASH</h1>
-    <form action="http://127.0.0.1:1002/sendcash" method="post">
+    <form action="http://127.0.0.1:1003/sendcash" method="post">
         <table>
             <tr>
-                <td>Amount (R):</td>
-                <td><input type="text" name="amount" placeholder="000,00"/></td>
+                <td>Amount :</td>
+                <td>R<input type="text" name="amount" placeholder="000,00"/></td>
             </tr>
             <tr>
                 <td>Account handler:</td>
-                <td><input type="text" name="accounthandler" placeholder="Account Handler"/></td>
+                <td><input type="text" name="to_account" placeholder="To Account"/></td>
             </tr>
             <tr>
                 <td>Account number:</td>
-                <td><input type="text" name="accountnumber" placeholder="123456789"/></td>
+                <td><input type="text" name="from_account" placeholder="From Account"/></td>
             </tr>
             <tr>
                 <td></td>
                 <td><input type="submit" value="SEND"></td>
-                <td><a href="http://127.0.0.1:1003/success?user_name="><input type="button" value="<BACK"></a></td>
             </tr>
         </table>
     </form>

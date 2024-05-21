@@ -1,4 +1,5 @@
 import os
+import socket
 import cv2
 import datetime
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
@@ -11,7 +12,7 @@ app.secret_key = 'your_secret_key'
 
 # Create a variable register
 register_data = {}
-
+####################################_FACE_RECOGNITION_HERE_####################################
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -19,6 +20,7 @@ def index():
 @app.route("/register", methods=["POST"])
 def register():
     name = request.form.get("name")
+    session['user_name'] = name
 
     # Get photo uploads
     photo = request.files['photo']
@@ -78,106 +80,267 @@ def login():
 
     response = {"success": False}
     return jsonify(response)
-
+####################################_SUCCESS_TEMPLATE_###################################################
 @app.route("/success")
 def success():
     user_name = session.get('user_name')
     if not user_name:
         return redirect(url_for('index'))
     return render_template("success.html", user_name=user_name)
-
+###########################################_RECONIZED_TEXT_#####################################################
 @app.route('/recognize', methods=['POST'])
 def recognize():
     text = request.form['text']
     print("Recognized text:", text)
     return text
-
+###########################################_DEPOSIT_##################################################################
 #UPDATE ACCOUNT SET BALANCE amount 
 @app.route('/deposit', methods=['POST', 'GET'])
 def deposit():
     if request.method == 'POST':
-        amount = request.form['amount']
-        conn = connect()
-        if conn:
+        action = "deposit"
+        amount = request.form.get('amount')  # Use .get() to handle if 'amount' is not in form data
+        account_number = session.get('user_name')
+
+        if amount:  # Check if 'amount' is not empty
             try:
-                cursor = conn.cursor()
-                # Example: Update account balance
-                # cursor.execute("UPDATE accounts SET balance = balance + %s WHERE account_number = %s", (amount, account_number))
-                conn.commit()
-                print(f"Deposited amount: {amount}")
+                send_data_to_receiver(action, amount,account_number)
+                message = f"Deposited amount: {amount}"
+                print(message)
+                return message
             except Exception as e:
-                print(f"An error occurred: {e}")
-            finally:
-                cursor.close()
-                conn.close()
-        return "Deposit successful!"
+                error_message = f"An error occurred while sending data: {e}"
+                print(error_message)
+                return error_message, 500  # Return error message with status code 500 (Internal Server Error)
+        else:
+            return "Amount not provided", 400  # Return error message with status code 400 (Bad Request)
+        
     return render_template('deposit.html')
 
+def send_data_to_receiver(action, amount, account_number):
+    try:
+        # IP address and port of the receiver
+        receiver_ip = '10.2.41.195'
+        receiver_port = 5000
+
+        # Data to be sent
+        data = f"{action},{amount},{account_number}".encode('utf-8')
+
+        # Create a socket object
+        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect to the receiver
+        sender_socket.connect((receiver_ip, receiver_port))
+
+        # Send data
+        sender_socket.sendall(data)
+
+        # Close the socket
+        sender_socket.close()
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while sending data to the receiver: {e}")  # Raise exception with error message
 
 
+#######################################_WITHDRAW_################################################
 @app.route('/withdraw', methods=['POST', 'GET'])
 def withdraw():
     if request.method == 'POST':
-        amount = request.form['amount']
-        conn = connect()
-        if conn:
+        action = "withdraw"
+        amount = request.form.get('amount')  # Use .get() to handle if 'amount' is not in form data
+        account_number = session.get('user_name')
+
+        if amount:  # Check if 'amount' is not empty
             try:
-                cursor = conn.cursor()
-                # Example: Update account balance
-                # cursor.execute("UPDATE accounts SET balance = balance - %s WHERE account_number = %s", (amount, account_number))
-                conn.commit()
-                print(f"Withdrawn amount: {amount}")
+                message = f"Withdrawn amount: {amount}"
+                print(message)
+                send_withdraw_data_to_receiver(action, amount, account_number)
+                return message
             except Exception as e:
-                print(f"An error occurred: {e}")
-            finally:
-                cursor.close()
-                conn.close()
-        return "Withdraw successful!"
+                error_message = f"An error occurred while sending data: {e}"
+                print(error_message)
+                return error_message, 500  # Return error message with status code 500 (Internal Server Error)
+        else:
+            return "Amount not provided", 400  # Return error message with status code 400 (Bad Request)
+
     return render_template('withdraw.html')
 
+def send_withdraw_data_to_receiver(action, amount, account_number):
+    try:
+        # IP address and port of the receiver
+        receiver_ip = '10.2.41.195'
+        receiver_port = 5000
+
+        # Data to be sent
+        data = f"{action},{amount},{account_number}".encode('utf-8')
+
+        # Create a socket object
+        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect to the receiver
+        sender_socket.connect((receiver_ip, receiver_port))
+
+        # Send data
+        sender_socket.sendall(data)
+
+        # Close the socket
+        sender_socket.close()
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while sending data to the receiver: {e}")  # Raise exception with error message
+
+
+########################################_SEND_CASH_###########################################
 @app.route('/sendcash', methods=['POST', 'GET'])
 def sendcash():
     if request.method == 'POST':
-        amount = request.form['amount']
-        account_handler = request.form['accounthandler']
-        account_number = request.form['accountnumber']
-        conn = connect()
-        if conn:
+        action = "sendcash"
+        amount = request.form.get('amount')  # Use .get() to handle if 'amount' is not in form data
+        from_account = request.form.get('from_account')  # Use .get() to handle if 'from_account' is not in form data
+        to_account = request.form.get('to_account')  # Use .get() to handle if 'to_account' is not in form data
+
+        if amount and from_account and to_account:  # Check if all required data is provided
             try:
-                cursor = conn.cursor()
-                # Example: Transfer amount to another account
-                # cursor.execute("UPDATE accounts SET balance = balance - %s WHERE account_number = %s", (amount, sender_account_number))
-                # cursor.execute("UPDATE accounts SET balance = balance + %s WHERE account_number = %s", (amount, account_number))
-                conn.commit()
-                print(f"Sending amount: {amount} to {account_handler} {account_number}")
+                message = f"Sending amount: R{amount} \nTO THIS ACCOUNT: ****{to_account}**** \nFROM THIS ACCOUNT: ****{from_account}****"
+                print(message)
+                send_cash_data_to_receiver(action, amount, from_account, to_account)
+                return message
             except Exception as e:
-                print(f"An error occurred: {e}")
-            finally:
-                cursor.close()
-                conn.close()
-        return f"Sending to: {account_handler} {account_number}"
+                error_message = f"An error occurred while sending data: {e}"
+                print(error_message)
+                return error_message, 500  # Return error message with status code 500 (Internal Server Error)
+        else:
+            return "Incomplete data provided", 400  # Return error message with status code 400 (Bad Request)
+
     return render_template('sendcash.html')
 
+def send_cash_data_to_receiver(action, amount, from_account, to_account):
+    try:
+        # IP address and port of the receiver
+        receiver_ip = '10.2.41.195'
+        receiver_port = 5000
+
+        # Data to be sent
+        data = f"{action},{amount},{from_account},{to_account}".encode('utf-8')
+
+        # Create a socket object
+        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect to the receiver
+        sender_socket.connect((receiver_ip, receiver_port))
+
+        # Send data
+        sender_socket.sendall(data)
+
+        # Close the socket
+        sender_socket.close()
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while sending data to the receiver: {e}")  # Raise exception with error message
+
+
+############################################_CHECK_BALANCE_#########################################
 @app.route('/checkbalance', methods=['POST', 'GET'])
 def checkbalance():
-    account_number = "1234567890"
-    balance = 5000.00  # Example balance
-    return render_template('checkbalance.html', account_number=account_number, balance=balance)
+    action = "checkbalance"
+    account_number = session.get('user_name')
+    data_received = send_data_read_to_receiver(action,account_number)
 
-def connect():
+    if data_received is not None:
+        try:
+            data_parts = data_received.split(',')
+            if len(data_parts) >= 5:  # Check if received data has at least 5 parts
+                transaction_id, transaction_type, amount, account_type, account = data_parts[:5]
+                displayed_data = f"Amount: {amount}\nAccount Type: {account_type}\nAccount Number: {account}"
+                return render_template('checkbalance.html', data=displayed_data)
+            else:
+                return "Incomplete data received"
+        except Exception as e:
+            return f"Error occurred while processing received data: {e}"  # Return error message with details
+    else:
+        return "An error occurred while sending/receiving data. Either data does not exist"
+
+def send_data_read_to_receiver(action,account_number):
     try:
-        conn = psycopg2.connect(
-            dbname="testingDB",
-            user="postgres",
-            password="123",
-            host="localhost",
-            port="5432"
-        )
-        print("Connected to the database")
-        return conn
-    except OperationalError as e:
-        print(f"Error connecting to database: {e}")
-        return None
+        # IP address and port of the receiver
+        receiver_ip = '192.168.198.67'
+        receiver_port = 5000
+
+        # Data to be sent
+        data = f"{action},{account_number}".encode('utf-8')
+
+        # Create a socket object
+        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect to the receiver
+        sender_socket.connect((receiver_ip, receiver_port))
+
+        # Send data
+        sender_socket.sendall(data)
+
+        # Receive response from the receiver
+        received_data = sender_socket.recv(1024)  # Receive up to 1024 bytes of data
+        received_data = received_data.decode('utf-8')
+
+        # Close the socket
+        sender_socket.close()
+
+        return received_data
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while sending/receiving data: {e}")  # Raise exception with error message
+####################################_STATEMENT_##########################################
+@app.route('/statement', methods=['POST', 'GET'])
+def print_Statement():
+    action = "statement"
+    account_number = session.get('user_name')
+    data_received = send_data_read_to_receiver(action,account_number)
+
+    if data_received is not None:
+        try:
+            data_parts = data_received.split(',')
+            if len(data_parts) >= 5:  # Check if received data has at least 5 parts
+                transaction_id, transaction_type, amount, account_type, account = data_parts[:5]
+                displayed_data = f"Transaction ID: {transaction_id}\nTransaction type: {transaction_type}\nAmount: {amount}\nAccount Type: {account_type}\nAccount Number: {account}"
+                return render_template('statement.html', data=displayed_data)
+            else:
+                return "Incomplete data received"
+        except Exception as e:
+            return f"Error occurred while processing received data: {e}"  # Return error message with details
+    else:
+        return "An error occurred while sending/receiving data. Either data does not exist"
+
+
+def send_data_read_to_receiver(action,account_number):
+    try:
+        # IP address and port of the receiver
+        receiver_ip = '192.168.198.67'
+        receiver_port = 5000
+
+        # Data to be sent
+        data = f"{action},{account_number}".encode('utf-8')
+
+        # Create a socket object
+        sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        # Connect to the receiver
+        sender_socket.connect((receiver_ip, receiver_port))
+
+        # Send data
+        sender_socket.sendall(data)
+
+        # Receive response from the receiver
+        received_data = sender_socket.recv(1024)  # Receive up to 1024 bytes of data
+        received_data = received_data.decode('utf-8')
+
+        # Close the socket
+        sender_socket.close()
+
+        return received_data
+
+    except Exception as e:
+        raise RuntimeError(f"An error occurred while sending/receiving data: {e}")  # Raise exception with error message
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=1003)
