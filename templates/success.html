@@ -20,32 +20,73 @@
             justify-content: center;
             height: 100vh;
         }
-        #recordButton {
-            padding: 20px 45px; /* Adjusted padding */
-            font-size: 28px; /* Adjusted font size */
+        #buttonContainer {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin-top: 20px;
+        }
+        .buttonGroup {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .actionButton {
+            padding: 20px 45px;
+            font-size: 28px;
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 5px;
+            margin: 10px 0;
+            width: 200px; /* Adjusted width */
         }
-        #recordButton:hover {
+        #recordButton {
+            padding: 20px 45px;
+            font-size: 28px;
+            background-color: #f44336; /* Red color for recording button */
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .actionButton:hover {
             background-color: #45a049;
         }
         #output {
             margin-top: 20px;
             font-size: 18px;
         }
+        #statementLink {
+            font-size: 20px;
+            margin-top: 10px;
+            color: #040608;
+            text-decoration: none;
+        }
+        #statementLink:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div id="container">
-        <h1>VVS (Visage Voice Sentinel)</h1>
-        <button id="recordButton">TALK TO ME</button>
-        <div id="output">Choose what you want to do and say to the mic (DEPOSIT, WITHDRAW, SEND CASH, CHECK BALANCE)</div>
-        <a href="/statement">Request Statement</a>
+        <h1><u>VVS (Visage Voice Sentinel)</u></h1>
+        <div id="buttonContainer">
+            <div class="buttonGroup">
+                <a href="/deposit" class="actionButton">Deposit</a>
+                <a href="/withdraw" class="actionButton">Withdraw</a>
+            </div>            
+            <div class="buttonGroup">
+                <a href="/sendcash" class="actionButton">Send Cash</a>
+                <a href="/checkbalance" class="actionButton">Check Balance</a>
+            </div>
+        </div>
+        <div><button id="recordButton">TALK TO ME</button></div>
+        <a href="/statement" id="statementLink">Request Statement</a>
     </div>
-    
+
     <script>
         function startRecognition() {
             var recognition = new webkitSpeechRecognition();

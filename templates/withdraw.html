@@ -54,17 +54,23 @@
     </style>
 </head>
 <body>
-    <h1>WITHDRAW</h1>
+    <h1><u>WITHDRAW</u></h1>
     <form action="http://127.0.0.1:1003/withdraw" method="post">
         <table>
             <tr>
                 <td>Amount (R):</td>
-                <td><input type="text" name="amount" placeholder="000,00"/></td>
+                <td>R<input type="text" name="amount" placeholder="000,00"/></td>
             </tr>
             
             <tr>
                 <td></td>
                 <td><input type="submit" value="WITHDRAW"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><textarea name="output" id="output" cols="60" rows="8" readonly>
+                    {{data}}
+                </textarea></td>
             </tr>
         </table>
     </form>

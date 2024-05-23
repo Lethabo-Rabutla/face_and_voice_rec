@@ -54,16 +54,23 @@
     </style>
 </head>
 <body>
-    <h1>DEPOSIT</h1>
+    <h1><u>DEPOSIT</u></h1>
     <form action="http://127.0.0.1:1003/deposit" method="post">
         <table>
             <tr>
                 <td>Amount (R):</td>
-                <td><input type="text" name="amount" placeholder="R000,00"/></td>
+                <td>R<input type="text" name="amount" placeholder="000.00"/></td>
             </tr>
             <tr>
                 <td></td>
                 <td><input type="submit" value="DEPOSIT"></td>
+                <td><a href="http://127.0.0.1:1003/success">back</a></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><textarea name="output" id="output" cols="60" rows="8" readonly>
+                    {{data}}
+                </textarea></td>
             </tr>
         </table>
     </form>
