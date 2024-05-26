@@ -48,7 +48,7 @@
             color: white;
             cursor: pointer;
         }
-        button,input[type="submit"]:hover {
+        button, input[type="submit"]:hover {
             background-color: #45a049;
         }
     </style>
@@ -57,12 +57,28 @@
     <h1><u>STATEMENT</u></h1>
     <center>
     <table>
-        <tr>
-            <textarea name="output" id="output" cols="60" rows="8" readonly>
-                {{ data }}
-            </textarea>
-        </tr>
+        <thead>
+            <tr>
+                <th>ACTION</th>
+                <th>AMOUNT</th>
+                <th>ACCOUNT</th>
+                <!-- Add more table headers as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in statement_data %}
+            <tr>
+                <td>{{ record[0] }}</td>  <!-- Assuming Transaction ID is the first column -->
+                <td>{{ record[1] }}</td>  <!-- Assuming Action is the second column -->
+                <td>{{ record[2] }}</td>  <!-- Assuming Amount is the third column -->
+                <!-- Add more table cells as needed -->
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
+    <form method="POST" action="/statement">
+        <input type="submit" value="show statement">
+    </form>
     </center>
 </body>
 </html>
