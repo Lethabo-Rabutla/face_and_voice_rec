@@ -1,7 +1,7 @@
 import os
 import socket
 import cv2
-import datetime
+from datetime import datetime
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session
 import face_recognition
 import psycopg2
@@ -16,7 +16,7 @@ DB_PARAMS = {
     'dbname': 'VVSDB',
     'user': 'postgres',
     'password': '123',
-    'host': '192.168.1.69',
+    'host': '10.2.43.191',
     'port': '5432'
 }
 
@@ -55,7 +55,8 @@ def register():
         os.makedirs(upload_folder)
 
     # Save the photo image with the file name containing the current date
-    filename = f"{datetime.date.today()}_{name}.jpg"
+    date_str = datetime.today().strftime("%Y-%m-%d")
+    filename = f"{date_str}_{name}.jpg"
     photo_path = os.path.join(upload_folder, filename)
     photo.save(photo_path)
     register_data[name] = filename
@@ -137,9 +138,9 @@ def deposit():
         if amount:  # Check if 'amount' is not empty
             try:
                 send_data_to_receiver(action, amount, account_number)
-                message = f"Deposited amount: {amount}"
-                print(message)
-                return message
+                displayed_data = f"Deposited amount: {amount}"
+                print(displayed_data)
+                return displayed_data
             except Exception as e:
                 error_message = f"An error occurred while sending data: {e}"
                 print(error_message)
@@ -158,6 +159,9 @@ def send_data_to_receiver(action, amount, account_number):
         connection = connection_pool.getconn()  # Get connection from the pool
         cursor = connection.cursor()
 
+        # Get current timestamp with timezone
+        timestamp = datetime.now().astimezone()
+
         # Update the balance directly
         update_balance_query = sql.SQL(
             "UPDATE transactions SET amount = amount + %s WHERE accountnumber = %s"
@@ -166,9 +170,9 @@ def send_data_to_receiver(action, amount, account_number):
 
         # Insert the transaction into the Transactions table
         insert_transaction_query = sql.SQL(
-            "INSERT INTO transactions (accountnumber, action, amount) VALUES (%s, %s, %s)"
+            "INSERT INTO transactions (action, amount, accountnumber, timestamp) VALUES (%s, %s, %s, %s)"
         ).format(sql.Identifier('Transactions'))
-        cursor.execute(insert_transaction_query, (account_number, action, amount))
+        cursor.execute(insert_transaction_query, (action, amount, account_number, timestamp))
 
         # Commit the transaction
         connection.commit()
@@ -185,28 +189,28 @@ def send_data_to_receiver(action, amount, account_number):
             cursor.close()
         if connection:
             connection.close()
-
-#######################################_WITHDRAW_################################################
+##########################################_WITHDRAW_####################################
 @app.route('/withdraw', methods=['POST', 'GET'])
 def withdraw():
     if request.method == 'POST':
         action = "withdraw"
-        amount = float(request.form.get('amount')) # Use .get() to handle if 'amount' is not in form data
+        amount = request.form.get('amount')  # Use .get() to handle if 'amount' is not in form data
         account_number = session.get('user_name')
 
         if amount:  # Check if 'amount' is not empty
             try:
                 send_withdraw_data_to_receiver(action, amount, account_number)
                 message = f"Withdrawn amount: {amount}"
+                print(message)
                 return message
             except Exception as e:
                 error_message = f"An error occurred while processing the withdrawal: {e}"
+                print(error_message)
                 return error_message, 500  # Return error message with status code 500 (Internal Server Error)
         else:
             return "Amount not provided", 400  # Return error message with status code 400 (Bad Request)
 
     return render_template('withdraw.html')
-
 
 def send_withdraw_data_to_receiver(action, amount, account_number):
     connection = None
@@ -216,11 +220,14 @@ def send_withdraw_data_to_receiver(action, amount, account_number):
         connection = connection_pool.getconn()  # Get connection from the pool
         cursor = connection.cursor()
 
+        # Get current timestamp with timezone
+        timestamp = datetime.now().astimezone()
+
         # Check if the withdrawal amount is valid
         cursor.execute("SELECT amount FROM transactions WHERE accountnumber = %s", (account_number,))
         balance = float(cursor.fetchone()[0]) 
         balance = float(balance)  # Convert balance to float
-        if balance < amount:
+        if float(balance) < float(amount):
             raise ValueError("Insufficient balance")
 
         # Update the balance directly
@@ -231,9 +238,9 @@ def send_withdraw_data_to_receiver(action, amount, account_number):
 
         # Insert the transaction into the Transactions table
         insert_transaction_query = sql.SQL(
-            "INSERT INTO transactions (accountnumber, action, amount) VALUES (%s, %s, %s)"
+            "INSERT INTO transactions (action, amount, accountnumber, timestamp) VALUES (%s, %s, %s, %s)"
         ).format(sql.Identifier('Transactions'))
-        cursor.execute(insert_transaction_query, (account_number, action, amount))
+        cursor.execute(insert_transaction_query, (action, amount, account_number,  timestamp))
 
         # Commit the transaction
         connection.commit()
@@ -279,11 +286,15 @@ def sendcash():
     return render_template('sendcash.html')
 
 def send_cash_data_to_db(action, amount, from_account, to_account):
+    
     connection = None
     cursor = None
     try:
         # Convert amount to a float
         amount = float(amount)
+        
+        # Get current timestamp with timezone
+        timestamp = datetime.now().astimezone()
         
         # Connect to the database
         connection = connection_pool.getconn()
@@ -291,8 +302,7 @@ def send_cash_data_to_db(action, amount, from_account, to_account):
 
         # Check if the `from_account` has enough balance
         cursor.execute("SELECT amount FROM transactions WHERE accountnumber = %s", (from_account,))
-        from_account_balance = cursor.fetchone()[0]
-        from_account_balance = float(from_account_balance)
+        from_account_balance = float(cursor.fetchone()[0])
 
         if from_account_balance < amount:
             raise ValueError("Insufficient balance in the sender's account")
@@ -303,11 +313,11 @@ def send_cash_data_to_db(action, amount, from_account, to_account):
         # Update the balance for `to_account`
         cursor.execute("UPDATE transactions SET amount = amount + %s WHERE accountnumber = %s", (amount, to_account))
 
-        # Insert the transaction record for `from_account`
-        cursor.execute("INSERT INTO transactions (accountnumber, action, amount) VALUES (%s, %s, %s)", (from_account, action, -amount))
+        # Insert the transaction record for `from_account` with timestamp
+        cursor.execute("INSERT INTO transactions (accountnumber, action, amount, timestamp) VALUES (%s, %s, %s, %s)", (from_account, action, -amount, timestamp))
 
-        # Insert the transaction record for `to_account`
-        cursor.execute("INSERT INTO transactions (accountnumber, action, amount) VALUES (%s, %s, %s)", (to_account, action, amount))
+        # Insert the transaction record for `to_account` with timestamp
+        cursor.execute("INSERT INTO transactions (accountnumber, action, amount, timestamp) VALUES (%s, %s, %s, %s)", (to_account, action, amount, timestamp))
 
         # Commit the transaction
         connection.commit()
