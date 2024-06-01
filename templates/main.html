@@ -1,96 +1,135 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Visage Voice Sentinel ATM</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                margin: 0;
-                padding: 0;
-            }
-            h1 {
-                text-align: center;
-            }
-            #container {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
-            }
-            #recordButton {
-                padding: 20px 45px; /* Adjusted padding */
-                font-size: 28px; /* Adjusted font size */
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                cursor: pointer;
-                border-radius: 5px;
-            }
-            #recordButton:hover {
-                background-color: #45a049;
-            }
-            #output {
-                margin-top: 20px;
-                font-size: 18px;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="container">
-            <h1>VVS(Visage Voice Sentinel)</h1>
-            
-            <button id="recordButton">TALK TO ME</button>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Web Login</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: #060c06;
+        }
+        video, canvas {
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 580px;
+            height: auto;
+        }
+        button {
+            background: #4CAF50;
+            border: none;
+            padding: 10px 20px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease, transform 0.3s ease;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        table {
+            margin: 20px auto;
+            width: 100%;
+            max-width: 400px;
+        }
+        table td {
+            padding: 10px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border-radius: 5px;
+            width: calc(100% - 22px);
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <video id="video" autoplay></video>
+        <br>
+        <canvas id="canvas" width="320" height="240" style="display: none;"></canvas>
+        <table>
+            <h1>Welcome Back</h1>
+            <tr>
+                <td>Your account number</td>
+                <td><input type="text" id="name" name="name" required></td>
+            </tr>
+        </table>
+    </div>
+    <script>
+        let video;
+        let canvas;
+        let nameInput;
+        let socket;
 
-            <div id="output">Choose what you want to do and say to the mic (DEPOSIT, WITHDRAW, SEND CASH, CHECK BALANCE)</div>
-        </div>
+        function init() {
+            video = document.getElementById("video");
+            canvas = document.getElementById("canvas");
+            nameInput = document.getElementById("name");
 
-        <script>
-            // Function to handle voice recognition
-            function startRecognition() {
-                var recognition = new webkitSpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.start();
+            // Open webcam
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+                    startRecognition();
+                })
+                .catch(error => {
+                    console.log("Error accessing webcam", error);
+                    alert("Cannot access webcam");
+                });
 
-                recognition.onresult = function(event) {
-                    var result = event.results[0][0].transcript;
+            // Setup WebSocket
+            socket = new WebSocket('ws://localhost:8000/ws');
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.success) {
+                    alert(`Login successful! Welcome ${data.user_name}`);
+                    window.location.href = "/success?user_name=" + data.user_name;
+                } else {
+                    console.log("Recognition failed");
+                }
+            };
+        }
 
-                    // Send the recognized text to the server
-                    var xhr = new XMLHttpRequest();
-                    xhr.open('POST', '/recognize', true);
-                    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    xhr.onload = function() {
-                        if (xhr.status === 200) {
-                            console.log('Text sent to server:', result);
-                           // Handle response
-                            var responseText = xhr.responseText.trim();  // Remove leading and trailing spaces
+        function captureAndSendFrame() {
+            const context = canvas.getContext("2d");
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL("image/jpeg");
+            socket.send(JSON.stringify({ image: dataUrl, name: nameInput.value }));
+        }
 
-                            if (responseText.includes("deposit")) {
-                                window.location.href = "/deposit";
-                            } else if (responseText.includes("withdraw")) {
-                                window.location.href = "/withdraw";
-                            } else if (responseText.includes("send cash")) {
-                                window.location.href = "/sendcash";  // Match the route name in Flask
-                            } else if (responseText.includes("check balance")) {
-                                window.location.href = "/checkbalance";  // Match the route name in Flask
-                            } else {
-                                console.error('Unknown command:', responseText);
-                            }
+        function startRecognition() {
+            setInterval(captureAndSendFrame, 5000); // Send frame every 5 seconds
+        }
 
-                        } else {
-                            console.error('Voice recognition request failed');
-                        }
-                    };
-                    xhr.send('text=' + encodeURIComponent(result)); // Ensure text is properly encoded
-                };
-            }
-
-            // Event listener for the record button
-            document.getElementById('recordButton').addEventListener('click', function() {
-                startRecognition();
-            });
-        </script>
-    </body>
-    </html>
+        init();
+    </script>
+</body>
+</html>

@@ -16,7 +16,7 @@ DB_PARAMS = {
     'dbname': 'VVSDB',
     'user': 'postgres',
     'password': '123',
-    'host': '10.2.43.191',
+    'host': '192.168.1.69',
     'port': '5432'
 }
 
@@ -116,8 +116,6 @@ def login():
 @app.route("/success")
 def success():
     user_name = session.get('user_name')
-    if not user_name:
-        return redirect(url_for('index'))
     return render_template("success.html", user_name=user_name)
 ###########################################_RECONIZED_TEXT_#####################################################
 @app.route('/recognize', methods=['POST'])
@@ -400,6 +398,10 @@ def print_statement():
             cursor = connection.cursor()
             print("Connected")
             
+            # Fetch names for the account number
+            fetch_name = sql.SQL("SELECT name,surname,address FROM users WHERE accountnumber = %s")
+            cursor.execute(fetch_name, (account_number))
+            names = cursor.fetchall()
             # Fetch statement data for the specified account number
             fetch_query = sql.SQL("SELECT * FROM transactions WHERE accountnumber = %s")
             cursor.execute(fetch_query, (account_number,))
@@ -420,7 +422,7 @@ def print_statement():
             error_message = f"An error occurred while fetching statement data: {e}"
             return render_template('error.html', error_message=error_message), 500
     
-    return render_template('statement.html', statement_data=[])
+    return render_template('statement.html', statement_data=[] )
 
 if __name__ == "__main__":
-    app.run(debug=True, port=1003)
+    app.run(debug=True, port=1014)

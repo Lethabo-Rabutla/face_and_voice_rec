@@ -9,9 +9,14 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            background-color: #f0f2f5; /* Light gray background */
         }
         h1 {
             text-align: center;
+            color: #4CAF50; /* Green color for the heading */
+            margin-bottom: 30px;
+            text-transform: uppercase; /* Uppercase text */
+            font-size: 56px; /* Larger font size */
         }
         #container {
             display: flex;
@@ -33,40 +38,46 @@
         }
         .actionButton {
             padding: 20px 45px;
-            font-size: 28px;
+            font-size: 24px; /* Reduced font size */
             background-color: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 5px;
             margin: 10px 0;
-            width: 200px; /* Adjusted width */
+            width: 200px;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+        .actionButton:hover {
+            background-color: #45a049; /* Darker green on hover */
         }
         #recordButton {
             padding: 20px 45px;
-            font-size: 28px;
+            font-size: 24px; /* Reduced font size */
             background-color: #f44336; /* Red color for recording button */
             color: white;
             border: none;
             cursor: pointer;
             border-radius: 5px;
             margin: 20px 0;
+            text-align: center;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
         }
-        .actionButton:hover {
-            background-color: #45a049;
-        }
-        #output {
-            margin-top: 20px;
-            font-size: 18px;
+        #recordButton:hover {
+            background-color: #d32f2f; /* Darker red on hover */
         }
         #statementLink {
-            font-size: 20px;
+            font-size: 20px; /* Reduced font size */
             margin-top: 10px;
-            color: #040608;
+            color: #4CAF50; /* Green color for the link */
             text-decoration: none;
+            transition: color 0.3s ease;
         }
         #statementLink:hover {
-            text-decoration: underline;
+            color: #45a049; /* Darker green on hover */
         }
     </style>
 </head>

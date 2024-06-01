@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>deposit</title>
+    <title>Deposit</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,20 +55,15 @@
 </head>
 <body>
     <h1><u>DEPOSIT</u></h1>
-    <form action="http://127.0.0.1:1003/deposit" method="post">
+    <form action="/deposit" method="post">
         <table>
             <tr>
                 <td>Amount (R):</td>
-                <td>R<input type="text" name="amount" placeholder="000.00"/></td>
+                <td>R<input type="text" name="amount" placeholder="000.00" required/></td>
             </tr>
             <tr>
                 <td></td>
                 <td><input type="submit" value="DEPOSIT"></td>
-                <td><a href="http://127.0.0.1:1003/success">back</a></td>
-            </tr>
-            <tr>
-                <td></td>
-               
             </tr>
         </table>
     </form>
